@@ -41,6 +41,7 @@ jobs:
         id: setup
         with:
           dpm-version: ${{ matrix.version }}
+          github-token: ${{ github.token }}
       - name: Verify DPM in a later step
         env:
           REQUESTED_VERSION: ${{ matrix.version }}
@@ -66,6 +67,7 @@ jobs:
         with:
           dpm-version: "1.0.22"
           sdk-version: "3.5.9"
+          github-token: ${{ github.token }}
       - name: Verify SDK and pinned DPM in a later step
         env:
           DPM_VERSION: ${{ steps.setup.outputs.dpm-version }}
