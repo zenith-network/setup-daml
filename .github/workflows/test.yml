@@ -1,0 +1,83 @@
+# This workflow is managed by gh actions-lock.
+
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: "24"
+      - run: npm ci --ignore-scripts
+      - run: npm run all
+      - name: Check committed bundle is reproducible
+        run: git diff --exit-code -- dist/
+
+  dpm:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+        version: ["1.0.22", latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/
+        id: setup
+        with:
+          dpm-version: ${{ matrix.version }}
+      - name: Verify DPM in a later step
+        env:
+          REQUESTED_VERSION: ${{ matrix.version }}
+          DPM_VERSION: ${{ steps.setup.outputs.dpm-version }}
+          SDK_VERSION: ${{ steps.setup.outputs.sdk-version }}
+        run: |
+          test "$DPM_HOME" = "$RUNNER_TEMP/dpm"
+          test "$(command -v dpm)" = "$DPM_HOME/bin/dpm"
+          test "$(dpm --version | sed -n 's/^version:[[:space:]]*//p')" = "$DPM_VERSION"
+          test -z "$SDK_VERSION"
+          if [ "$REQUESTED_VERSION" != latest ]; then
+            test "$DPM_VERSION" = "$REQUESTED_VERSION"
+          fi
+
+  sdk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/
+        id: setup
+        with:
+          dpm-version: "1.0.22"
+          sdk-version: "3.5.9"
+      - name: Verify SDK and pinned DPM in a later step
+        env:
+          DPM_VERSION: ${{ steps.setup.outputs.dpm-version }}
+          SDK_VERSION: ${{ steps.setup.outputs.sdk-version }}
+        working-directory: ${{ runner.temp }}
+        run: |
+          test "$DPM_VERSION" = "1.0.22"
+          test "$SDK_VERSION" = "3.5.9"
+          test "$(dpm --version | sed -n 's/^version:[[:space:]]*//p')" = "$DPM_VERSION"
+          dpm versions --output json | jq -e --arg version "$SDK_VERSION" \
+            'any(.[]; .installed == true and .version == $version)'
+          sdk_smoke_dir=$(mktemp -d)
+          dpm new "$sdk_smoke_dir/project" --template skeleton
+          cd "$sdk_smoke_dir/project"
+          dpm build --all

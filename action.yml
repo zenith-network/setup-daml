@@ -1,0 +1,27 @@
+name: "zenith-network/setup-daml"
+description: "Install Daml SDK"
+author: "zenith-network"
+branding:
+  icon: "package"
+  color: "gray-dark"
+inputs:
+  dpm-version:
+    description: "DPM release version to install, or latest"
+    default: "latest"
+  sdk-version:
+    description: "Daml SDK version to install"
+    required: false
+  dpm-registry:
+    description: "Overwrite OCI registry from which DPM installs the Daml SDK"
+    required: false
+  github-token:
+    description: "Token used to query GitHub REST API"
+    required: false
+outputs:
+  dpm-version:
+    description: "Installed DPM version"
+  sdk-version:
+    description: "Installed Daml SDK version"
+runs:
+  using: "node24"
+  main: "dist/setup.cjs"

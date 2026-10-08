@@ -1,0 +1,52 @@
+{
+  "name": "setup-daml",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Install DPM and the Daml SDK in GitHub Actions",
+  "license": "MIT",
+  "author": "zenith-network",
+  "type": "module",
+  "main": "dist/setup.cjs",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "check": "biome check .",
+    "format": "biome check --write .",
+    "package": "node scripts/build-dist.mjs",
+    "act": "act pull_request -W .github/workflows/test.yml --container-architecture linux/amd64 --matrix runner:ubuntu-24.04 -P ubuntu-24.04=ghcr.io/catthehacker/ubuntu:act-24.04 --container-daemon-socket - --concurrent-jobs 1",
+    "test:unit": "vitest run",
+    "test": "npm run build && npm run test:unit",
+    "all": "npm run build && npm run check && npm run test:unit && npm run package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zenith-network/setup-daml.git"
+  },
+  "keywords": [
+    "actions",
+    "daml",
+    "canton"
+  ],
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.10.0",
+      "onFail": "error"
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/node": "^24.19.1",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/github": "^9.1.1",
+    "@actions/tool-cache": "^4.0.0"
+  }
+}
